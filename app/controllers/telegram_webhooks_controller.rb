@@ -185,8 +185,6 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def sort_teams(players)
     @players          = players.first(@venue.players_count)
     @venue            = Venue.find(players.first.venue_id)
-    @total_points     = get_sum_point(@players)
-    @average_per_team = @total_points.to_f / @venue.teams
     @players_per_team = @venue.players_count / @venue.teams
     @teams            = Array.new(@venue.teams) { Array.new }
     @temp_list        = @players.sort_by(&:rating)
