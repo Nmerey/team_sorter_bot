@@ -1,107 +1,232 @@
 class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
 
-  def start!(*)
-    respond_with :message, text: t('.content')
-  end
+  def futboll!(*)
+    if Venue.exists?(id: from['id'])
+      @venue      = Venue.find(from['id'])
+      @players = @venue.players
+      
+      @players.each do |player|
+        if player.is_friend
+          player.destroy
+        else
+          player.update(venue_id: nil)
+        end  
+      end
 
-  def help!(*)
-    respond_with :message, text: t('.content')
-  end
-
-  def memo!(*args)
-    if args.any?
-      session[:memo] = args.join(' ')
-      respond_with :message, text: t('.notice')
+      @venue.save
+      respond_with :message, text: "Location?"
+      save_context :get_location
     else
-      respond_with :message, text: t('.prompt')
-      save_context :memo!
+      Venue.create(id: from['id'])
+      respond_with :message, text: "Location?"
+      save_context :get_location
     end
   end
 
-  def remind_me!(*)
-    to_remind = session.delete(:memo)
-    reply = to_remind || t('.nothing')
-    respond_with :message, text: reply
+  def get_location(location)
+    @venue          = Venue.find(from['id'])
+    @venue.location = location
+    @venue.save
+
+    respond_with :message, text: "Date?"
+    save_context :get_date
   end
 
-  def keyboard!(value = nil, *)
-    if value
-      respond_with :message, text: t('.selected', value: value)
-    else
-      save_context :keyboard!
-      respond_with :message, text: t('.prompt'), reply_markup: {
-        keyboard: [t('.buttons')],
-        resize_keyboard: true,
-        one_time_keyboard: true,
-        selective: true,
-      }
-    end
+  def get_date(date)
+    @venue      = Venue.find(from['id'])
+    @venue.date = date
+    @venue.save
+
+    respond_with :message, text: "Time?"
+    save_context :get_time
   end
 
-  def inline_keyboard!(*)
-    respond_with :message, text: t('.prompt'), reply_markup: {
+  def get_time(time)
+    @venue      = Venue.find(from['id'])
+    @venue.time = time
+    @venue.save
+
+    respond_with :message, text: "How many teams and players like so \n(3 15)"
+    save_context :get_teams
+  end
+
+  def get_teams(*data)
+    @venue                = Venue.find(from['id'])
+    @venue.teams          = data[0].to_i
+    @venue.players_count  = data[1].to_i
+    @title                = [@venue.location, @venue.date, @venue.time].join(" ")
+    @text                 = @title + get_list(@venue.players)
+    
+    respond_with :message, text: @text, reply_markup: {
       inline_keyboard: [
         [
-          {text: t('.alert'), callback_data: 'alert'},
-          {text: t('.no_alert'), callback_data: 'no_alert'},
+          {text: '+', callback_data: "+" + "#{@venue.id}"},
+          {text: '-', callback_data: "-" + "#{@venue.id}"},
         ],
-        [{text: t('.repo'), url: 'https://github.com/telegram-bot-rb/telegram-bot'}],
+        [
+          {text: 'Add Friend', callback_data: "f" + "#{@venue.id}"},
+          {text: "Remove Friend", callback_data: "r" + "#{@venue.id}"},
+        ],
+        [
+          {text: "Sort Teams", callback_data: "s" + "#{@venue.id}"},
+        ],
       ],
     }
   end
 
   def callback_query(data)
-    if data == 'alert'
-      answer_callback_query t('.alert'), show_alert: true
-    else
-      answer_callback_query t('.no_alert')
+
+    @venue    = Venue.find(data[1..])
+    @fullname = from['first_name'] + " " + from["last_name"]
+    
+    if data[0] == '+'
+
+      if Player.exists?(t_id: from['id'])
+
+        @player = Player.find_by_t_id(from['id'])
+        @player.update(venue_id: @venue.id)
+
+      else
+        @player = Player.create(name: @fullname, t_id: from['id'],venue_id: @venue.id)
+      end
+
+      @players              = @venue.players
+      @title                = [@venue.location, @venue.date, @venue.time].join(" ")
+      @text                 = @title + get_list(@venue.players)
+
+      show_edit_reply(@text, data)
+
+    elsif data[0] == '-'
+
+      @player   = Player.find_by_t_id(from['id'])
+
+      if @player
+        @player.update(venue_id: 0)
+      end
+
+      @title                = [@venue.location, @venue.date, @venue.time].join(" ")
+      @text                 = @title + get_list(@venue.players)
+
+      show_edit_reply(@text, data)
+
+    elsif data[0] == 'f'
+      session[:venue_id]  = @venue.id
+      session[:callback]  = payload["message"]
+      session[:friend_id] = from['id']
+      respond_with :message, text: "Give Nickname and Rating(1 to 10) like so (Chapa 3)"
+      save_context :add_friend
+
+    elsif data[0] == 'r'
+      @player               = @venue.players.where(friend_id: from['id']).first.destroy
+      @title                = [@venue.location, @venue.date, @venue.time].join(" ")
+      @text                 = @title + get_list(@venue.players)
+
+      show_edit_reply(@text, data)
+
+    elsif data[0] == 's'
+      if validate_admin?
+        @sorted_teams = sort_teams(@venue.players)
+        @list         = ""
+        @sorted_teams.each_with_index do |team, i|
+          @list += "TEAM #{i+1}\n"
+          team.each do |player, i|
+            @list += "#{i}. #{player.name}\n"
+          end
+        end
+
+        respond_with :message, text: @list
+
+      else
+        answer_callback_query("You are not admin!")
+      end
     end
   end
 
-  def message(message)
-    respond_with :message, text: t('.content', text: message['text'])
+  def add_friend(*data)
+
+    payload["message"]  = session[:callback]
+    @player             = Player.new(name: data[0], rating: data[1], t_id: rand(100000),  venue_id: session[:venue_id], friend_id: session[:friend_id], is_friend: true)
+
+    if @player.save
+      @venue  = Venue.find(@player.venue_id)
+      @text   = @venue.location + get_list(@venue.players)
+
+      show_edit_reply(@text, "f#{@venue.id}")
+    end
   end
 
-  def inline_query(query, _offset)
-    query = query.first(10) # it's just an example, don't use large queries.
-    t_description = t('.description')
-    t_content = t('.content')
-    results = Array.new(5) do |i|
-      {
-        type: :article,
-        title: "#{query}-#{i}",
-        id: "#{query}-#{i}",
-        description: "#{t_description} #{i}",
-        input_message_content: {
-          message_text: "#{t_content} #{i}",
-        },
+  def get_list(data)
+    @list = ""
+    data.each_with_index do |player,i|
+      @list   += "\n#{i+1}. #{player.name}"
+    end
+    @list
+  end
+  
+  def show_edit_reply(players,data)
+    edit_message :text, text: @text, reply_markup: {
+      inline_keyboard: [
+        [
+          {text: '+', callback_data: "+" + data[1..]},
+          {text: '-', callback_data: "-" + data[1..]},
+        ],
+        [
+          {text: 'Add Friend', callback_data:     "f" + data[1..]},
+          {text: "Remove Friend", callback_data:  "r" + data[1..]},
+        ],
+        [
+          {text: "Sort Teams", callback_data: "s" + data[1..]},
+        ],
+      ],
+    }
+  end
+
+  def sort_teams(players)
+    @players          = players.first(@venue.players_count)
+    @venue            = Venue.find(players.first.venue_id)
+    @total_points     = get_sum_point(@players)
+    @average_per_team = @total_points.to_f / @venue.teams
+    @players_per_team = @venue.players_count / @venue.teams
+    @teams            = Array.new(@venue.teams) { Array.new }
+    @temp_list        = @players.sort_by(&:rating)
+
+    while @temp_list.any?
+      0.upto(@venue.teams - 1) { |i| 
+        if @temp_list.any?
+          @teams[i] << @temp_list.first
+          @temp_list.slice!(0)
+        end
       }
+
+      0.upto(@venue.teams - 1) { |i|
+        if @temp_list.any?
+          @teams[i] << @temp_list.last
+          @temp_list.pop()
+        end
+      }
+
     end
-    answer_inline_query results
+
+    @teams
   end
 
-  # As there is no chat id in such requests, we can not respond instantly.
-  # So we just save the result_id, and it's available then with `/last_chosen_inline_result`.
-  def chosen_inline_result(result_id, _query)
-    session[:last_chosen_inline_result] = result_id
+
+  def get_sum_point(team)
+    @sum = 0
+    if !team.nil?
+      team.each do |player|
+        @sum += player.rating
+      end
+    end
+    @sum
   end
 
-  def last_chosen_inline_result!(*)
-    result_id = session[:last_chosen_inline_result]
-    if result_id
-      respond_with :message, text: t('.selected', result_id: result_id)
-    else
-      respond_with :message, text: t('.prompt')
-    end
+  private
+
+  def validate_admin?
+    @admins = [231273192]
+    @admins.include?(from['id'])
   end
 
-  def action_missing(action, *_args)
-    if action_type == :command
-      respond_with :message,
-        text: t('telegram_webhooks.action_missing.command', command: action_options[:command])
-    else
-      respond_with :message, text: t('telegram_webhooks.action_missing.feature', action: action)
-    end
-  end
 end

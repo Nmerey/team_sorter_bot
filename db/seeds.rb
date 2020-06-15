@@ -5,3 +5,5 @@
 #
 #   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
 #   Character.create(name: 'Luke', movie: movies.first)
+
+1.upto(20) { Player.create(name: Faker::Name.name, t_id: rand(100000), venue_id: 231273192, rating: rand(10) ) }
