@@ -80,7 +80,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
     @venue    = Venue.find(data[1..])
     @fullname = from['first_name'] + " " + from["last_name"]
-    
+    from['username'].exists? ? @username = "@#{from['username']}" : @username = ""
+    @name     = @fullname + " " + @username
+
     if data[0] == '+'
 
       if Player.exists?(t_id: from['id'])
@@ -89,7 +91,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         @player.update(venue_id: @venue.id)
 
       else
-        @player = Player.create(name: @fullname, t_id: from['id'],venue_id: @venue.id)
+        @player = Player.create(name: @name, t_id: from['id'],venue_id: @venue.id)
       end
 
       @players              = @venue.players
@@ -131,7 +133,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         @list         = ""
         @sorted_teams.each_with_index do |team, i|
           @list += "TEAM #{i+1}\n"
-          team.each do |player, i|
+          team.each_with_index do |player, i|
             @list += "#{i}. #{player.name}\n"
           end
         end
