@@ -118,7 +118,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       session[:venue_id]  = @venue.id
       session[:callback]  = payload["message"]
       session[:friend_id] = from['id']
-      respond_with :message, text: "Give Nickname and Rating(1 to 10) like so (Chapa 3)"
+      
+      reply_with :message, text: "Add Name and Rating\nLike so: Chapa 3", reply_markup: {force_reply: true}
       save_context :add_friend
 
     elsif data[0] == 'r'
@@ -133,7 +134,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         @sorted_teams = sort_teams(@venue.players)
         @list         = ""
         @sorted_teams.each_with_index do |team, i|
-          @list += "**TEAM** #{i+1}\n\n"
+          @list += "\n    TEAM #{i+1}\n"
           team.each_with_index do |player, i|
             @list += "#{i+1}. #{player.name}\n"
           end
@@ -148,14 +149,12 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def add_friend(*data)
-
-    payload["message"]  = session[:callback]
     @player             = Player.new(name: data[0], rating: data[1], t_id: rand(100000),  venue_id: session[:venue_id], friend_id: session[:friend_id], is_friend: true)
 
     if @player.save
       @venue  = Venue.find(@player.venue_id)
       @text   = @venue.location + get_list(@venue.players)
-
+      payload["message"]  = session[:callback]
       show_edit_reply(@text, "f#{@venue.id}")
     end
   end
