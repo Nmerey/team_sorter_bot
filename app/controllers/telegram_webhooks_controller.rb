@@ -170,7 +170,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   
   def show_edit_reply(players,data)
     @venue  = Venue.find(data[1..])
-    @text   = @venue.location + get_list(@venue.players)
+    @title  = [@venue.location, @venue.date, @venue.time].join(" ")
+    @text   = @title + get_list(@venue.players)
 
     edit_message :text, text: @text, reply_markup: {
       inline_keyboard: [
