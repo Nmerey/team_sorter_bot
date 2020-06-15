@@ -80,7 +80,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
     @venue    = Venue.find(data[1..])
     @fullname = from['first_name'] + " " + from["last_name"]
-    from['username'].nil? ? @username = "@#{from['username']}" : @username = ""
+    !from['username'].nil? ? @username = "@#{from['username']}" : @username = ""
     @name     = @fullname + " " + @username
 
     if data[0] == '+'
