@@ -52,10 +52,10 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def get_teams(*data)
-    byebug
     @venue                = Venue.find(from['id'])
     @venue.teams          = data[0].to_i
     @venue.players_count  = data[1].to_i
+    @venue.save
     @title                = [@venue.location, @venue.date, @venue.time].join(" ")
     @text                 = @title + get_list(@venue.players)
     
