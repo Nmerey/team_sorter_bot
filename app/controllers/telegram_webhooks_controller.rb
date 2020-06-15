@@ -2,25 +2,28 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
 
   def futboll!(*)
-    if Venue.exists?(id: from['id'])
-      @venue      = Venue.find(from['id'])
-      @players = @venue.players
-      
-      @players.each do |player|
-        if player.is_friend
-          player.destroy
-        else
-          player.update(venue_id: nil)
-        end  
-      end
+    if validate_admin
+      if Venue.exists?(id: from['id'])
+        @venue      = Venue.find(from['id'])
+        @players    = @venue.players
 
-      @venue.save
-      respond_with :message, text: "Location?"
-      save_context :get_location
-    else
-      Venue.create(id: from['id'])
-      respond_with :message, text: "Location?"
-      save_context :get_location
+        @players.each do |player|
+          if player.is_friend
+            player.destroy
+          else
+            player.update(venue_id: nil)
+          end  
+        end
+
+        @venue.save
+        respond_with :message, text: "Location?"
+        save_context :get_location
+      else
+        Venue.create(id: from['id'])
+        respond_with :message, text: "Location?"
+        save_context :get_location
+      end
+        
     end
   end
 
@@ -80,8 +83,6 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
     @venue    = Venue.find(data[1..])
     @fullname = from['first_name'] + " " + from["last_name"]
-    !from['username'].nil? ? @username = "@#{from['username']}" : @username = ""
-    @name     = @fullname + " " + @username
 
     if data[0] == '+'
 
@@ -91,7 +92,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         @player.update(venue_id: @venue.id)
 
       else
-        @player = Player.create(name: @name, t_id: from['id'],venue_id: @venue.id)
+        @player = Player.create(name: @name, t_id: from['id'],venue_id: @venue.id, username: from['username'])
       end
 
       @players              = @venue.players
@@ -168,6 +169,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
   
   def show_edit_reply(players,data)
+    @venue  = Venue.find(data[1..])
+    @text   = @venue.location + get_list(@venue.players)
+
     edit_message :text, text: @text, reply_markup: {
       inline_keyboard: [
         [
@@ -226,7 +230,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   private
 
   def validate_admin?
-    @admins = [231273192]
+    @admins = [231273192,171310419]
     @admins.include?(from['id'])
   end
 
