@@ -2,7 +2,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
 
   def futboll!(*)
-    if validate_admin
+    if validate_admin?
       if Venue.exists?(id: from['id'])
         @venue      = Venue.find(from['id'])
         @players    = @venue.players
