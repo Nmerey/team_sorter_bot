@@ -133,9 +133,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         @sorted_teams = sort_teams(@venue.players)
         @list         = ""
         @sorted_teams.each_with_index do |team, i|
-          @list += "TEAM #{i+1}\n"
+          @list += "**TEAM** #{i+1}\n\n"
           team.each_with_index do |player, i|
-            @list += "#{i}. #{player.name}\n"
+            @list += "#{i+1}. #{player.name}\n"
           end
         end
 
