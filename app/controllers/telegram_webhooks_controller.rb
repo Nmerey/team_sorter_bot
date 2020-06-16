@@ -2,7 +2,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
 
   def futboll!(*)
-    if validate_admin?
+    if validate_admin? || form['id'] == chat['id']
       if Venue.exists?(id: from['id'])
         @venue      = Venue.find(from['id'])
         @players    = @venue.players
@@ -27,7 +27,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     end
   end
 
-  def get_location(location)
+  def get_location(*location)
     @venue          = Venue.find(from['id'])
     @venue.location = location
     @venue.save
@@ -36,7 +36,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     save_context :get_date
   end
 
-  def get_date(date)
+  def get_date(*date)
     @venue      = Venue.find(from['id'])
     @venue.date = date
     @venue.save
@@ -45,7 +45,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     save_context :get_time
   end
 
-  def get_time(time)
+  def get_time(*time)
     @venue      = Venue.find(from['id'])
     @venue.time = time
     @venue.save
@@ -120,7 +120,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       session[:callback]  = payload["message"]
       session[:friend_id] = from['id']
       respond_with :message, text: "Name and Rating form 1 to 10 like so: \n Chapa 0"
-      session[:message] = payload['message']
+      session[:message]   = payload['message']
       save_context :add_friend
 
     elsif data[0] == 'r'
