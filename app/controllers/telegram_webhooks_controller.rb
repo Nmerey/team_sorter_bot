@@ -28,7 +28,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     end
   end
 
-  def get_location(*location)
+  def get_location(location)
     @venue          = Venue.find(from['id'])
     @venue.location = location
     @venue.save
@@ -37,7 +37,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     save_context :get_date
   end
 
-  def get_date(*date)
+  def get_date(date)
     @venue      = Venue.find(from['id'])
     @venue.date = date
     @venue.save
@@ -46,7 +46,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     save_context :get_time
   end
 
-  def get_time(*time)
+  def get_time(time)
     @venue      = Venue.find(from['id'])
     @venue.time = time
     @venue.save
@@ -56,6 +56,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def get_teams(*data)
+
     @venue                = Venue.find(from['id'])
     @venue.teams          = data[0].to_i
     @venue.players_count  = data[1].to_i
@@ -117,12 +118,12 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       show_edit_reply(@text, data)
 
     elsif data[0] == 'f'
+
       session[:venue_id]  = @venue.id
       session[:callback]  = payload["message"]
       session[:friend_id] = from['id']
-      respond_with :message, text: "Name and Rating form 1 to 10 like so: \n Chapa 0"
-      session[:message]   = payload['message']
-      save_context :add_friend
+      reply_with :message, text: "Name and Rating form 1 to 10 like so: \n Chapa 0", reply_markup: {force_reply: true, selective: true}
+      add_friend(payload['message']['text'])
 
     elsif data[0] == 'r'
       @player               = @venue.players.where(friend_id: from['id']).first.destroy
@@ -132,8 +133,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       show_edit_reply(@text, data)
 
     elsif data[0] == 's'
-      Telegram.bot.send_message(chat_id: session['message']['chat']['id'], text: "Give Name and Rating like so: \n Chapa 0", reply_to_message_id: session["message"]["message_id"], reply_markup: { force_reply: true, selective: true})
-      
+
       if validate_admin?
         @sorted_teams = sort_teams(@venue.players)
         @list         = ""
@@ -153,8 +153,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def add_friend(*data)
-    reply_with :message , text: "", reply_markup: { force_reply: true, selective: true }
-    @player             = Player.new(name: data[0], rating: data[1], t_id: rand(100000),  venue_id: session[:venue_id], friend_id: session[:friend_id], is_friend: true)
+
+    @data = data.split[" "]
+    @player             = Player.new(name: data.first, rating: data.last.to_i, t_id: rand(100000),  venue_id: session[:venue_id], friend_id: session[:friend_id], is_friend: true)
 
     if @player.save
       @venue  = Venue.find(@player.venue_id)
