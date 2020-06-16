@@ -119,9 +119,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       session[:venue_id]  = @venue.id
       session[:callback]  = payload["message"]
       session[:friend_id] = from['id']
-      p payload['chat']
-      p payload['message']
-      Telegram.bot.send_message(chat_id: payload['message']['chat']['id'], text: "Give Name and Rating like so: \n Chapa 0", reply_to_message_id: payload["message"]["message_id"], reply_markup: { force_reply: true, selective: true})
+      respond_with :message, text: "Name and Rating form 1 to 10 like so: \n Chapa 0"
+      sesion[:message] = payload['message']
       save_context :add_friend
 
     elsif data[0] == 'r'
@@ -132,6 +131,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       show_edit_reply(@text, data)
 
     elsif data[0] == 's'
+      Telegram.bot.send_message(chat_id: session['message']['chat']['id'], text: "Give Name and Rating like so: \n Chapa 0", reply_to_message_id: session["message"]["message_id"], reply_markup: { force_reply: true, selective: true})
+      
       if validate_admin?
         @sorted_teams = sort_teams(@venue.players)
         @list         = ""
