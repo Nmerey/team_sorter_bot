@@ -154,7 +154,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def add_friend(*data)
 
-    @data = data.split[" "]
+    @data = data.split(" ")
     @player             = Player.new(name: data.first, rating: data.last.to_i, t_id: rand(100000),  venue_id: session[:venue_id], friend_id: session[:friend_id], is_friend: true)
 
     if @player.save
