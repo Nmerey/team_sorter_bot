@@ -1,0 +1,13 @@
+<div class="container mt-5">
+	<div class="card-columns">
+		<% @players.each do |player| %>
+		<div class="card text-center">
+			<div class="card-body">
+				<h5 class="card-title"><%= player.name %></h5>
+				<p class="card-text rating"><%= player.rating %></p>
+				<%= link_to "Give Rating", edit_player_path(player),class: 'btn btn-primary' %>
+			</div>
+		</div>
+		<% end %>
+	</div>
+</div>

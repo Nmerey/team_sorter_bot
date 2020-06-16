@@ -1,0 +1,19 @@
+<div class="container mr-5 mt-5">
+	<%= form_for @player do |f| %>
+	<div class="form-group row">
+		<%= f.label 'Full Name', class: "col-sm-2 col-form-label" %><br>
+		<div class="col-sm-10">
+			<%= f.text_field :name, class: "form-control-plaintext" %><br>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<%= f.label 'Impact Rating', class: "col-sm-2 col-form-label" %><br>
+		<div class="col-sm-2">
+			<%= f.number_field :rating, class: "form-control",min:1, max: 10 %><br>
+		</div>
+	</div>
+
+	<%= f.submit "Submit" %>
+	<% end %>
+</div>
