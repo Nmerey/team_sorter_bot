@@ -10,7 +10,7 @@ class PlayersController < ApplicationController
 	def update
 		@player = Player.find(params[:id])
 		@player.rating.nil? ? @old_rating = 0 : @old_rating = @player.rating
-		@rating = (params[:player][:rating].to_i + @old_rating) / 2
+		@old_rating == 0 ? @rating = params[:player][:rating] : @rating = (params[:player][:rating].to_i + @old_rating) / 2
 
 		if @player.update(rating: @rating)
 			redirect_to root_path
