@@ -82,7 +82,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def callback_query(data)
 
     @venue    = Venue.find(data[1..])
-    @fullname = [from['first_name'], from['last_name'], from['username']].join(" ")
+    from['username'].nil? ? @username = nil : @username = "@#{from['username']}"
+    @fullname = [from['first_name'], from['last_name'], @username ].join(" ")
 
     if data[0] == '+'
 
@@ -161,7 +162,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def get_list(data)
     @list = ""
-    data.each_with_index do |player,i|
+    @players = data.sort_by(&:updated_at)
+    @players.each_with_index do |player,i|
       @list   += "\n#{i+1}. #{player.name}"
     end
     @list
