@@ -82,7 +82,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def callback_query(data)
 
     @venue    = Venue.find(data[1..])
-    @fullname = from['first_name'] + " " + from["last_name"]
+    @fullname = [from['first_name'], from['last_name'], from['username']].join(" ")
 
     if data[0] == '+'
 
