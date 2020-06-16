@@ -120,7 +120,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       session[:callback]  = payload["message"]
       session[:friend_id] = from['id']
       respond_with :message, text: "Name and Rating form 1 to 10 like so: \n Chapa 0"
-      sesion[:message] = payload['message']
+      session[:message] = payload['message']
       save_context :add_friend
 
     elsif data[0] == 'r'
