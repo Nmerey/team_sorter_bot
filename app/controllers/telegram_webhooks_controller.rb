@@ -2,7 +2,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
 
   def futboll!(*)
-    if validate_admin? || form['id'] == chat['id']
+    if validate_admin? || from['id'] == chat['id']
       if Venue.exists?(id: from['id'])
         @venue      = Venue.find(from['id'])
         @players    = @venue.players
@@ -23,7 +23,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         respond_with :message, text: "Location?"
         save_context :get_location
       end
-        
+    else 
+      answer_callback_query("Fork this project and webhook your own bot!")
     end
   end
 
