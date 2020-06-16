@@ -92,7 +92,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         @player.update(venue_id: @venue.id)
 
       else
-        @player = Player.create(name: @name, t_id: from['id'],venue_id: @venue.id, username: from['username'])
+        @player = Player.create(name: @fullname, t_id: from['id'],venue_id: @venue.id, username: from['username'])
       end
 
       @players              = @venue.players
