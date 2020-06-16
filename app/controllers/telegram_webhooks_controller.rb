@@ -122,7 +122,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       session[:venue_id]  = @venue.id
       session[:callback]  = payload["message"]
       session[:friend_id] = from['id']
-      reply_with :message, text: "Name and Rating form 1 to 10 like so: \n Chapa 0", reply_markup: {force_reply: true, selective: true}
+      reply_with :message, text: "Name and Rating form 1 to 10 like so: \n Chapa 0", reply_markup: {[force_reply: true], [selective: true]}
       save_context :add_friend
 
     elsif data[0] == 'r'
