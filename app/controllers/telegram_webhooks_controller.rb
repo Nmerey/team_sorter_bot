@@ -150,6 +150,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def add_friend(*data)
+    reply_with :message, text: data.join(" "), reply_markup: { force_reply: true, selective: true }
     @player             = Player.new(name: data[0], rating: data[1], t_id: rand(100000),  venue_id: session[:venue_id], friend_id: session[:friend_id], is_friend: true)
 
     if @player.save
