@@ -39,7 +39,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def get_date(date)
     @venue      = Venue.find(from['id'])
-    @date 		= [date,Date.today.year.to_s].join(".").to_date
+    @date 		= [date,Date.today.year.to_s].join(".").strftime("%A %d.%m")
     @venue.date = @date || date 
     @venue.save
 
