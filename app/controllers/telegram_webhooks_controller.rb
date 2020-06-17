@@ -87,6 +87,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     from['username'].nil? ? @username = nil : @username = "@#{from['username']}"
     @fullname = [from['first_name'], from['last_name'], @username ].join(" ")
 
+    p data
+
     if data[0] == '+'
 
       if Player.exists?(t_id: from['id'])
@@ -131,10 +133,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       @text                 = @title + get_list(@venue.players)
 
       show_edit_reply(@text, data)
-
-    elsif data[0] == 's'
-      Telegram.bot.send_message(chat_id: session['message']['chat']['id'], text: "Give Name and Rating like so: \n Chapa 0", reply_to_message_id: session["message"]["message_id"], reply_markup: { force_reply: true, selective: true})
       
+    elsif data[0] == 's'
+      p data
       if validate_admin?
         @sorted_teams = sort_teams(@venue.players)
         @list         = ""
