@@ -28,21 +28,22 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     end
   end
 
-  def get_location(location)
+  def get_location(*location)
     @venue          = Venue.find(from['id'])
-    @venue.location = location
+    @venue.location = location.join(" ")
     @venue.save
 
-    respond_with :message, text: "Date?"
+    respond_with :message, text: "Date? (DD.MM)"
     save_context :get_date
   end
 
   def get_date(date)
     @venue      = Venue.find(from['id'])
-    @venue.date = date
+    @date 		= [date,Date.today.year.to_s].join(".").to_date
+    @venue.date = @date || date 
     @venue.save
 
-    respond_with :message, text: "Time?"
+    respond_with :message, text: "Time? "
     save_context :get_time
   end
 
@@ -61,7 +62,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     @venue.teams          = data[0].to_i
     @venue.players_count  = data[1].to_i
     @venue.save
-    @title                = [@venue.location, @venue.date, @venue.time].join(" ")
+    @title                = [@venue.location, @venue.date, @venue.time].join("\n")
     @text                 = @title + get_list(@venue.players)
     
     respond_with :message, text: @text, reply_markup: {
@@ -101,7 +102,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       end
 
       @players              = @venue.players
-      @title                = [@venue.location, @venue.date, @venue.time].join(" ")
+      @title                = [@venue.location, @venue.date, @venue.time].join("\n")
       @text                 = @title + get_list(@venue.players)
 
       show_edit_reply(@text, data)
@@ -114,7 +115,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         @player.update(venue_id: 0)
       end
 
-      @title                = [@venue.location, @venue.date, @venue.time].join(" ")
+      @title                = [@venue.location, @venue.date, @venue.time].join("\n")
       @text                 = @title + get_list(@venue.players)
 
       show_edit_reply(@text, data)
@@ -133,14 +134,14 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       @text                 = @title + get_list(@venue.players)
 
       show_edit_reply(@text, data)
-      
+
     elsif data[0] == 's'
       p data
       if validate_admin?
         @sorted_teams = sort_teams(@venue.players)
         @list         = ""
         @sorted_teams.each_with_index do |team, i|
-          @list += "\n    TEAM #{i+1}\n"
+          @list += "\nTEAM #{i+1}\n"
           team.each_with_index do |player, i|
             @list += "#{i+1}. #{player.name}\n"
           end
