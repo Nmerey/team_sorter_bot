@@ -39,7 +39,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def get_date(date)
     @venue      = Venue.find(from['id'])
-    @date 		= [date,Date.today.year.to_s].join(".").strftime("%A %d.%m")
+    @date 		= [date,Date.today.year.to_s].join(".").to_date.strftime("%A %d.%m")
     @venue.date = @date || date 
     @venue.save
 
@@ -62,7 +62,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     @venue.teams          = data[0].to_i
     @venue.players_count  = data[1].to_i
     @venue.save
-    @title                = [@venue.location, @venue.date, @venue.time].join("\n")
+    @title                = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
     @text                 = @title + get_list(@venue.players)
     
     respond_with :message, text: @text, reply_markup: {
@@ -102,7 +102,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       end
 
       @players              = @venue.players
-      @title                = [@venue.location, @venue.date, @venue.time].join("\n")
+      @title                = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
       @text                 = @title + get_list(@venue.players)
 
       show_edit_reply(@text, data)
@@ -115,7 +115,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         @player.update(venue_id: 0)
       end
 
-      @title                = [@venue.location, @venue.date, @venue.time].join("\n")
+      @title                = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
       @text                 = @title + get_list(@venue.players)
 
       show_edit_reply(@text, data)
@@ -130,7 +130,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
     elsif data[0] == 'r'
       @player               = @venue.players.where(friend_id: from['id']).first.destroy
-      @title                = [@venue.location, @venue.date, @venue.time].join(" ")
+      @title                = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
       @text                 = @title + get_list(@venue.players)
 
       show_edit_reply(@text, data)
