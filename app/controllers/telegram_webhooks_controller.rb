@@ -127,8 +127,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       show_edit_reply(data)
 
     elsif data[0] == 's'
-      p data
-      if validate_admin?
+
+      if validate_admin? && @venue.players.count >= @venue.players_count
         @sorted_teams = sort_teams(@venue.players)
         @list         = ""
         @sorted_teams.each_with_index do |team, i|
@@ -141,7 +141,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         respond_with :message, text: @list
 
       else
-        answer_callback_query("You are not admin!")
+        answer_callback_query("Something went wrong!")
       end
     end
   end
