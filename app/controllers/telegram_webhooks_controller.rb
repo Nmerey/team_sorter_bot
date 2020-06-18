@@ -101,11 +101,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         @player = Player.create(name: @fullname, t_id: from['id'],venue_id: @venue.id, username: from['username'])
       end
 
-      @players              = @venue.players
-      @title                = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
-      @text                 = @title + get_list(@venue.players)
-
-      show_edit_reply(@text, data)
+      show_edit_reply(data)
 
     elsif data[0] == '-'
 
@@ -115,10 +111,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         @player.update(venue_id: 0)
       end
 
-      @title                = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
-      @text                 = @title + get_list(@venue.players)
-
-      show_edit_reply(@text, data)
+      show_edit_reply(data)
 
     elsif data[0] == 'f'
 
@@ -130,10 +123,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
     elsif data[0] == 'r'
       @player               = @venue.players.where(friend_id: from['id']).first.destroy
-      @title                = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
-      @text                 = @title + get_list(@venue.players)
 
-      show_edit_reply(@text, data)
+      show_edit_reply(data)
 
     elsif data[0] == 's'
       p data
@@ -175,9 +166,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     @list
   end
   
-  def show_edit_reply(players,data)
+  def show_edit_reply(data)
     @venue  = Venue.find(data[1..])
-    @title  = [@venue.location, @venue.date, @venue.time].join(" ")
+    @title  = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
     @text   = @title + get_list(@venue.players)
 
     edit_message :text, text: @text, reply_markup: {
