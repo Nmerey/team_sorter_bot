@@ -150,7 +150,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     @player             = Player.new(name: data[0], rating: data[1], t_id: rand(100000),  venue_id: session[:venue_id], friend_id: session[:friend_id], is_friend: true)
     payload["message"]  = session[:callback]
     if @player.save
-      show_edit_reply(data)
+      show_edit_reply("f#{session[:venue_id]}")
     end
   end
 
