@@ -153,7 +153,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       @venue  = Venue.find(@player.venue_id)
       @text   = @venue.location + get_list(@venue.players)
       payload["message"]  = session[:callback]
-      show_edit_reply(@text, "f#{@venue.id}")
+      show_edit_reply(data)
     end
   end
 
