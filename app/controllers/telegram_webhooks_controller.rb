@@ -226,7 +226,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   private
 
   def validate_admin?
-    @admins = [231273192,171310419]
+    @admins = [231273192,171310419,44240768]
     @admins.include?(from['id'])
   end
 
