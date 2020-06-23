@@ -1,6 +1,6 @@
 class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
-  before_action :validate_admin, only: [:get_teams]
+  before_action :validate_admin?, only: [:get_teams]
 
   def futboll!(*)
     if validate_admin? || from['id'] == chat['id']
@@ -228,7 +228,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def validate_admin?
     @admins = [231273192,171310419,44240768]
-    
+
     if @admins.include?(from['id'])
       return true
     else
