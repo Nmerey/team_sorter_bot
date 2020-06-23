@@ -1,5 +1,6 @@
 class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
+  before_action :validate_admin, only: [:get_teams]
 
   def futboll!(*)
     if validate_admin? || from['id'] == chat['id']
@@ -77,6 +78,22 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     @venue.teams          = data[0].to_i
     @venue.players_count  = data[1].to_i
     @venue.save
+
+    if @venue.players.count >= @venue.players_count
+      @sorted_teams = sort_teams(@venue.players)
+      @list         = ""
+      @sorted_teams.each_with_index do |team, i|
+        @list += "\nTEAM #{i+1}\n"
+        team.each_with_index do |player, i|
+          @list += "#{i+1}. #{player.name}\n"
+        end
+      end
+
+      respond_with :message, text: @list
+
+    else
+      answer_callback_query("Something went wrong!")
+    end
     
   end
 
@@ -127,21 +144,6 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       respond_with :message, text: "Teams and Players like so \n 3 15"
       save_context :get_teams
 
-      if validate_admin? && @venue.players.count >= @venue.players_count
-        @sorted_teams = sort_teams(@venue.players)
-        @list         = ""
-        @sorted_teams.each_with_index do |team, i|
-          @list += "\nTEAM #{i+1}\n"
-          team.each_with_index do |player, i|
-            @list += "#{i+1}. #{player.name}\n"
-          end
-        end
-
-        respond_with :message, text: @list
-
-      else
-        answer_callback_query("Something went wrong!")
-      end
     end
   end
 
@@ -226,7 +228,13 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def validate_admin?
     @admins = [231273192,171310419,44240768]
-    @admins.include?(from['id'])
+    
+    if @admins.include?(from['id'])
+      return true
+    else
+      answer_callback_query("You are not admin!")
+    end
+
   end
 
 end
