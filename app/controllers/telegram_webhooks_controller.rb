@@ -39,7 +39,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def get_date(date)
     @venue      = Venue.find(from['id'])
-    @date 		= [date,Date.today.year.to_s].join(".").to_date.strftime("%A %d.%m")
+    @date 		  = [date,Date.today.year.to_s].join(".").to_date.strftime("%A %d.%m")
     @venue.date = @date || date 
     @venue.save
 
@@ -51,19 +51,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     @venue      = Venue.find(from['id'])
     @venue.time = time
     @venue.save
-
-    respond_with :message, text: "How many teams and players like so \n(3 15)"
-    save_context :get_teams
-  end
-
-  def get_teams(*data)
-
-    @venue                = Venue.find(from['id'])
-    @venue.teams          = data[0].to_i
-    @venue.players_count  = data[1].to_i
-    @venue.save
-    @title                = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
-    @text                 = @title + get_list(@venue.players)
+    @title      = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
+    @text       = @title + get_list(@venue.players)
     
     respond_with :message, text: @text, reply_markup: {
       inline_keyboard: [
@@ -82,13 +71,20 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     }
   end
 
+  def get_teams(*data)
+
+    @venue                = Venue.find(from['id'])
+    @venue.teams          = data[0].to_i
+    @venue.players_count  = data[1].to_i
+    @venue.save
+    
+  end
+
   def callback_query(data)
 
     @venue    = Venue.find(data[1..])
     from['username'].nil? ? @username = nil : @username = "@#{from['username']}"
     @fullname = [from['first_name'], from['last_name'], @username ].join(" ")
-
-    p data
 
     if data[0] == '+'
 
@@ -127,6 +123,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       show_edit_reply(data)
 
     elsif data[0] == 's'
+
+      respond_with :message, text: "Teams and Players like so \n 3 15"
+      save_context :get_teams
 
       if validate_admin? && @venue.players.count >= @venue.players_count
         @sorted_teams = sort_teams(@venue.players)
