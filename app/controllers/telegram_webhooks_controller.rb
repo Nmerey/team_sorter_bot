@@ -125,7 +125,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     elsif data[0] == 'r'
 
       @player               = @venue.players.where(friend_id: from['id']).first.destroy
-      
+
       show_edit_reply(data)
 
     elsif data[0] == 's'
@@ -229,7 +229,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def validate_admin?
     @admins = [231273192,171310419,44240768]
 
-    if @admins.include?(from['id'])
+    if @admins.include?(from['id']) || chat[:id] == from[:id]
       return true
     else
       answer_callback_query("You are not admin!")
