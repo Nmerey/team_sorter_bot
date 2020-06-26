@@ -1,4 +1,4 @@
 class Player < ApplicationRecord
-	belongs_to :venue, optional: true
+	has_many :matches
 	validates_uniqueness_of :t_id, on: :create
 end

@@ -10,23 +10,30 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200615171529) do
+ActiveRecord::Schema.define(version: 20200626003639) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "matches", force: :cascade do |t|
+    t.integer  "player_id"
+    t.integer  "venue_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["player_id"], name: "index_matches_on_player_id", using: :btree
+    t.index ["venue_id"], name: "index_matches_on_venue_id", using: :btree
+  end
 
   create_table "players", force: :cascade do |t|
     t.string   "name"
     t.integer  "rating"
     t.string   "t_id"
-    t.integer  "venue_id"
     t.boolean  "is_friend"
     t.string   "friend_id"
     t.string   "integer"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string   "username"
-    t.index ["venue_id"], name: "index_players_on_venue_id", using: :btree
   end
 
   create_table "venues", force: :cascade do |t|
@@ -37,6 +44,12 @@ ActiveRecord::Schema.define(version: 20200615171529) do
     t.integer  "players_count"
     t.datetime "created_at",    null: false
     t.datetime "updated_at",    null: false
+    t.integer  "match_id"
+    t.string   "chat_title"
+    t.index ["match_id"], name: "index_venues_on_match_id", using: :btree
   end
 
+  add_foreign_key "matches", "players"
+  add_foreign_key "matches", "venues"
+  add_foreign_key "venues", "matches"
 end
