@@ -125,7 +125,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     elsif data[0] == 'r'
 
       @player               = @venue.players.where(friend_id: from['id']).first.destroy
-
+      
       show_edit_reply(data)
 
     elsif data[0] == 's'
