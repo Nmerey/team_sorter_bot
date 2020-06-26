@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200626003639) do
+ActiveRecord::Schema.define(version: 20200626004948) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -46,6 +46,7 @@ ActiveRecord::Schema.define(version: 20200626003639) do
     t.datetime "updated_at",    null: false
     t.integer  "match_id"
     t.string   "chat_title"
+    t.integer  "owner_id"
     t.index ["match_id"], name: "index_venues_on_match_id", using: :btree
   end
 

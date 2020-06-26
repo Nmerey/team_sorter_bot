@@ -4,25 +4,25 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def futboll!(*)
     if from['id'] == chat['id']
-      if Venue.exists?(id: from['id'])
-        @venue      = Venue.find(from['id'])
-        
+      if Venue.where(owner_id: from[:id], chat_title: chat[:title]).exists?
+        @venue      = Venue.find_by(chat_title: chat[:title], owner_id: from[:id])
         @venue.players.where.not(friend_id: nil).destroy_all
         @venue.matches.destroy_all
         respond_with :message, text: "Location?"
         save_context :get_location
       else
-        Venue.create(id: from['id'], chat_title: chat[:title])
+        @venue = Venue.create(owner_id: from['id'], chat_title: chat[:title])
         respond_with :message, text: "Location?"
         save_context :get_location
       end
+      session[:venue_id] = @venue.id
     else 
       answer_callback_query("Contact @nmerey to get access")
     end
   end
 
   def get_location(*location)
-    @venue          = Venue.find(from['id'])
+    @venue          = Venue.find(session[:venue_id])
     @venue.location = location.join(" ")
     @venue.save
 
@@ -31,7 +31,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def get_date(date)
-    @venue      = Venue.find(from['id'])
+    @venue      = Venue.find(session[:venue_id])
     @date 		  = [date,Date.today.year.to_s].join(".").to_date.strftime("%A %d.%m")
     @venue.date = @date || date 
     @venue.save
@@ -41,11 +41,11 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def get_time(time)
-    @venue      = Venue.find(from['id'])
+    @venue      = Venue.find(session[:venue_id])
     @venue.time = time
-    @venue.save
     @title      = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
     @text       = @title + get_list(@venue.players)
+    @venue.save
     
     respond_with :message, text: @text, reply_markup: {
       inline_keyboard: [
@@ -66,7 +66,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def get_teams(*data)
 
-    @venue                = Venue.find(from['id'])
+    @venue                = Venue.find(session[:venue_id])
     @venue.teams          = data[0].to_i
     @venue.players_count  = data[1].to_i
     @venue.save
@@ -133,7 +133,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
     elsif data[0] == 's'
 
-      session[:venue_id] = @venue_id
+      session[:venue_id] = @venue.id
 
       respond_with :message, text: "Teams and Players like so \n 3 15"
       save_context :get_teams
