@@ -1,6 +1,6 @@
 class PlayersController < ApplicationController
 	def index
-		@players = Player.where(friend_id: nil)
+		@players 	= Player.where(friend_id: nil)
 	end
 
 	def edit
