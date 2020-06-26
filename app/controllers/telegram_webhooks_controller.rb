@@ -3,22 +3,18 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   before_action :validate_admin?, only: [:futboll!,:get_teams]
 
   def futboll!(*)
-    if from['id'] == chat['id']
-      if Venue.where(owner_id: from[:id], chat_title: chat[:title]).exists?
-        @venue      = Venue.find_by(chat_title: chat[:title], owner_id: from[:id])
-        @venue.players.where.not(friend_id: nil).destroy_all
-        @venue.matches.destroy_all
-        respond_with :message, text: "Location?"
-        save_context :get_location
-      else
-        @venue = Venue.create(owner_id: from['id'], chat_title: chat[:title])
-        respond_with :message, text: "Location?"
-        save_context :get_location
-      end
-      session[:venue_id] = @venue.id
-    else 
-      answer_callback_query("Contact @nmerey to get access")
+    if Venue.where(owner_id: from[:id], chat_title: chat[:title]).exists?
+      @venue      = Venue.find_by(chat_title: chat[:title], owner_id: from[:id])
+      @venue.players.where.not(friend_id: nil).destroy_all
+      @venue.matches.destroy_all
+      respond_with :message, text: "Location?"
+      save_context :get_location
+    else
+      @venue = Venue.create(owner_id: from['id'], chat_title: chat[:title])
+      respond_with :message, text: "Location?"
+      save_context :get_location
     end
+    session[:venue_id] = @venue.id
   end
 
   def get_location(*location)
