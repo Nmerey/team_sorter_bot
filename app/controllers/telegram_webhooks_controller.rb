@@ -110,6 +110,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       @player   = Player.find_by_t_id(from['id'])
       @match    = Match.find_by(player: @player, venue: @venue)
 
+      @match.destroy
       show_edit_reply(data)
 
     elsif data[0] == 'f'
