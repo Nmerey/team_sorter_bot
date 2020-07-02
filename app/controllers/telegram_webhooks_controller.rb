@@ -152,7 +152,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def get_list(data)
 
     @list     = ""
-    @players  = data
+    @players  = data.includes(:matches).order("matches.created_at")
 
     @players.each_with_index do |player,i|
       @list   += "\n#{i+1}. #{player.name}"
