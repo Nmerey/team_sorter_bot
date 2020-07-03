@@ -99,7 +99,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         @match  = Match.create(player: @player, venue: @venue)
 
       else
-        @player = Player.create(name: @fullname, t_id: from['id'],venue_id: @venue.id, username: from['username'])
+        @player = Player.create(name: @fullname, t_id: from['id'], username: from['username'])
         @match  = Match.create(player: @player, venue: @venue)
       end
 
