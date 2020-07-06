@@ -230,7 +230,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     @admins = [231273192,171310419,44240768]
 
     if @admins.include?(from['id']) || chat[:id] == from[:id]
-      render :futboll!
+      return true
     else
       answer_callback_query("You are not admin!")
       render :nothing => true
