@@ -13,8 +13,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         respond_with :message, text: "Location?"
         save_context :get_location
       end
+      session[:venue_id] = @venue.id
     end
-    session[:venue_id] = @venue.id
   end
 
   def get_location(*location)
@@ -131,10 +131,11 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     elsif data[0] == 's'
 
       session[:venue_id] = @venue.id
+
       if validate_admin?
        respond_with :message, text: "Teams and Players like so \n 3 15"
        save_context :get_teams
-     end
+      end
 
    end
  end
