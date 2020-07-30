@@ -224,10 +224,6 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     @sum
   end
 
-  def not_admin
-    respond_with :message, text: "You are not admin @#{from['username']}"
-  end
-
   private
 
   def validate_admin?
@@ -236,7 +232,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     if @admins.include?(from['id']) || chat[:id] == from[:id]
       return true
     else
-      not_admin
+      respond_with :message, text: "You are not admin @#{from['username']}"
+      break
     end
 
   end
