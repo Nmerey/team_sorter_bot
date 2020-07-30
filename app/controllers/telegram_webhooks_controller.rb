@@ -1,6 +1,6 @@
 class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
-  before_action :validate_admin?, only: [:futboll!,:get_teams]
+  before_action :validate_admin?, only: [:futboll!,:get_teams, :get_location, :get_date]
 
   def futboll!(*)
     if Venue.where(owner_id: from[:id], chat_title: chat[:title]).exists?
@@ -224,6 +224,10 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     @sum
   end
 
+  def not_admin
+    respond_with :message, text: "You are not admin @#{from['username']}"
+  end
+
   private
 
   def validate_admin?
@@ -232,8 +236,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     if @admins.include?(from['id']) || chat[:id] == from[:id]
       return true
     else
-      respond_with :message, text: "You are not admin @#{from['username']}"
-      return false
+      render :not_admin
     end
 
   end
