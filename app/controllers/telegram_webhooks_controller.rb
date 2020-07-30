@@ -1,18 +1,18 @@
 class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
-  before_action :validate_admin?, only: [:futboll!,:get_teams, :get_location, :get_date]
-
   def futboll!(*)
-    if Venue.where(owner_id: from[:id], chat_title: chat[:title]).exists?
-      @venue      = Venue.find_by(chat_title: chat[:title], owner_id: from[:id])
-      @venue.players.where.not(friend_id: nil).destroy_all
-      @venue.matches.destroy_all
-      respond_with :message, text: "Location?"
-      save_context :get_location
-    else
-      @venue = Venue.create(owner_id: from['id'], chat_title: chat[:title])
-      respond_with :message, text: "Location?"
-      save_context :get_location
+    if validate_admin?
+      if Venue.where(owner_id: from[:id], chat_title: chat[:title]).exists?
+        @venue      = Venue.find_by(chat_title: chat[:title], owner_id: from[:id])
+        @venue.players.where.not(friend_id: nil).destroy_all
+        @venue.matches.destroy_all
+        respond_with :message, text: "Location?"
+        save_context :get_location
+      else
+        @venue = Venue.create(owner_id: from['id'], chat_title: chat[:title])
+        respond_with :message, text: "Location?"
+        save_context :get_location
+      end
     end
     session[:venue_id] = @venue.id
   end
@@ -131,111 +131,112 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     elsif data[0] == 's'
 
       session[:venue_id] = @venue.id
+      if validate_admin?
+       respond_with :message, text: "Teams and Players like so \n 3 15"
+       save_context :get_teams
+     end
 
-      respond_with :message, text: "Teams and Players like so \n 3 15"
-      save_context :get_teams
+   end
+ end
 
-    end
+ def add_friend(*data)
+  @player             = Player.new(name: data[0], rating: data[1], t_id: rand(100000), friend_id: session[:friend_id], is_friend: true)
+  payload["message"]  = session[:callback]
+
+  if @player.save
+
+    @match = Match.new(player: @player, venue_id: session[:venue_id])
+    @match.save ? show_edit_reply("f#{session[:venue_id]}") : answer_callback_query("Something went wrong!")
   end
+end
 
-  def add_friend(*data)
-    @player             = Player.new(name: data[0], rating: data[1], t_id: rand(100000), friend_id: session[:friend_id], is_friend: true)
-    payload["message"]  = session[:callback]
+def get_list(data)
 
-    if @player.save
+  @list     = ""
+  @players  = data.includes(:matches).order("matches.created_at")
 
-      @match = Match.new(player: @player, venue_id: session[:venue_id])
-      @match.save ? show_edit_reply("f#{session[:venue_id]}") : answer_callback_query("Something went wrong!")
-    end
+  @players.each_with_index do |player,i|
+    @list   += "\n#{i+1}. #{player.name}"
   end
+  @list
+end
 
-  def get_list(data)
+def show_edit_reply(data)
 
-    @list     = ""
-    @players  = data.includes(:matches).order("matches.created_at")
+  @venue  = Venue.find(data[1..])
+  @title  = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
+  @text   = @title + "\n" + get_list(@venue.players)
 
-    @players.each_with_index do |player,i|
-      @list   += "\n#{i+1}. #{player.name}"
-    end
-    @list
-  end
-  
-  def show_edit_reply(data)
-
-    @venue  = Venue.find(data[1..])
-    @title  = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
-    @text   = @title + "\n" + get_list(@venue.players)
-
-    edit_message :text, text: @text, reply_markup: {
-      inline_keyboard: [
-        [
-          {text: '+', callback_data: "+" + data[1..]},
-          {text: '-', callback_data: "-" + data[1..]},
-        ],
-        [
-          {text: 'Add Friend', callback_data:     "f" + data[1..]},
-          {text: "Remove Friend", callback_data:  "r" + data[1..]},
-        ],
-        [
-          {text: "Sort Teams", callback_data: "s" + data[1..]},
-        ],
+  edit_message :text, text: @text, reply_markup: {
+    inline_keyboard: [
+      [
+        {text: '+', callback_data: "+" + data[1..]},
+        {text: '-', callback_data: "-" + data[1..]},
       ],
-    }
-  end
+      [
+        {text: 'Add Friend', callback_data:     "f" + data[1..]},
+        {text: "Remove Friend", callback_data:  "r" + data[1..]},
+      ],
+      [
+        {text: "Sort Teams", callback_data: "s" + data[1..]},
+      ],
+    ],
+  }
+end
 
-  def sort_teams(players)
+def sort_teams(players)
 
-    @venue            = Venue.find(session[:venue_id])
-    @players          = players.first(@venue.players_count)
-    @players_per_team = @venue.players_count / @venue.teams
-    @teams            = Array.new(@venue.teams) { Array.new }
-    @temp_list        = @players.sort_by(&:rating)
+  @venue            = Venue.find(session[:venue_id])
+  @players          = players.first(@venue.players_count)
+  @players_per_team = @venue.players_count / @venue.teams
+  @teams            = Array.new(@venue.teams) { Array.new }
+  @temp_list        = @players.sort_by(&:rating)
 
-    while @temp_list.any?
-      0.upto(@venue.teams - 1) { |i| 
-        if @temp_list.any?
-          @teams[i] << @temp_list.first
-          @temp_list.slice!(0)
-        end
-      }
-
-      0.upto(@venue.teams - 1) { |i|
-        if @temp_list.any?
-          @teams[i] << @temp_list.last
-          @temp_list.pop()
-        end
-      }
-
-    end
-
-    @teams
-  end
-
-
-  def get_sum_point(team)
-
-    @sum = 0
-
-    if !team.nil?
-      team.each do |player|
-        @sum += player.rating
+  while @temp_list.any?
+    0.upto(@venue.teams - 1) { |i| 
+      if @temp_list.any?
+        @teams[i] << @temp_list.first
+        @temp_list.slice!(0)
       end
-    end
-    @sum
-  end
+    }
 
-  private
-
-  def validate_admin?
-    @admins = [231273192,171310419,44240768]
-
-    if @admins.include?(from['id']) || chat[:id] == from[:id]
-      return true
-    else
-      respond_with :message, text: "You are not admin @#{from['username']}"
-      break
-    end
+    0.upto(@venue.teams - 1) { |i|
+      if @temp_list.any?
+        @teams[i] << @temp_list.last
+        @temp_list.pop()
+      end
+    }
 
   end
+
+  @teams
+end
+
+
+def get_sum_point(team)
+
+  @sum = 0
+
+  if !team.nil?
+    team.each do |player|
+      @sum += player.rating
+    end
+  end
+  @sum
+end
+
+private
+
+def validate_admin?
+  @admins = [231273192,171310419,44240768]
+
+  if @admins.include?(from['id']) || chat[:id] == from[:id]
+    return true
+  else
+    respond_with :message, text: "You are not admin @#{from['username']}"
+    return false
+  end
+
+end
 
 end
