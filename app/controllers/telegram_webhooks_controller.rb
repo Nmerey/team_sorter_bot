@@ -226,7 +226,6 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def not_admin
     respond_with :message, text: "You are not admin @#{from['username']}"
-    break
   end
 
   private
