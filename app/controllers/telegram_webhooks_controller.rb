@@ -233,6 +233,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       return true
     else
       respond_with :message, text: "You are not admin @#{from['username']}"
+      return false
     end
 
   end
