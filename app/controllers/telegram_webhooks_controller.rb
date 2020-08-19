@@ -229,7 +229,7 @@ end
 private
 
 def validate_admin?
-  @admins = [231273192,171310419,44240768]
+  @admins = [231273192,171310419,44240768,78443700]
 
   if @admins.include?(from['id']) || chat[:id] == from[:id]
     return true
