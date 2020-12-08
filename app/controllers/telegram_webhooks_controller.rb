@@ -67,7 +67,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     @venue.save
 
     if @venue.players.count >= @venue.players_count
-      @players  = @venue.players.includes(:matches).players.order("matches.created_at")
+      @players  = @venue.players.includes(:matches).order("matches.created_at")
       @sorted_teams = sort_teams(@players)
       @list         = ""
       @sorted_teams.each_with_index do |team, i|
