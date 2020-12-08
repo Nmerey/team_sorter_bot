@@ -1,5 +1,8 @@
 class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
+  before_action :set_venue, 
+    if: Proc.new { |res| res.action_name =~ /^(get)_*/  }
+
   def futboll!(*)
     if validate_admin?
       if Venue.where(owner_id: from[:id], chat_title: chat[:title]).exists?
@@ -18,7 +21,6 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def get_location(*location)
-    @venue          = Venue.find(session[:venue_id])
     @venue.location = location.join(" ")
     @venue.save
 
@@ -27,7 +29,6 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def get_date(date)
-    @venue      = Venue.find(session[:venue_id])
     @date 		  = [date,Date.today.year.to_s].join(".").to_date.strftime("%A %d.%m")
     @venue.date = @date || date 
     @venue.save
@@ -37,7 +38,6 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def get_time(time)
-    @venue      = Venue.find(session[:venue_id])
     @venue.time = time
     @title      = ["Location: #{@venue.location}", "Date: #{@venue.date}", "Time: #{@venue.time}"].join("\n")
     @text       = @title + get_list(@venue.players)
@@ -62,13 +62,13 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def get_teams(*data)
 
-    @venue                = Venue.find(session[:venue_id])
     @venue.teams          = data[0].to_i
     @venue.players_count  = data[1].to_i
     @venue.save
 
     if @venue.players.count >= @venue.players_count
-      @sorted_teams = sort_teams(@venue.players)
+      @players  = @venue.players.includes(:matches).players.order("matches.created_at")
+      @sorted_teams = sort_teams(@players)
       @list         = ""
       @sorted_teams.each_with_index do |team, i|
         @list += "\nTEAM #{i+1}\n"
@@ -187,7 +187,6 @@ end
 
 def sort_teams(players)
 
-  @venue            = Venue.find(session[:venue_id])
   @players          = players.first(@venue.players_count)
   @players_per_team = @venue.players_count / @venue.teams
   @teams            = Array.new(@venue.teams) { Array.new }
@@ -227,6 +226,10 @@ def get_sum_point(team)
 end
 
 private
+
+def set_venue
+  @venue = Venue.find(session[:venue_id])
+end
 
 def validate_admin?
   @admins = [231273192,171310419,44240768,78443700]
