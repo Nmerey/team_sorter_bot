@@ -190,7 +190,6 @@ def sort_teams(players)
   @players_list     = players.first(@venue.players_count).to_a
   @players_per_team = @venue.players_count / @venue.teams
   @teams            = Array.new(@venue.teams) { Array.new }
-  @temp_list        = @players.sort_by(&:rating)
   avrg              = players.sum(&:rating) / @venue.teams
 
   0.upto(@venue.teams - 2) do |i|
