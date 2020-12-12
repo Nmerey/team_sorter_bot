@@ -187,28 +187,18 @@ end
 
 def sort_teams(players)
 
-  @players          = players.first(@venue.players_count)
+  @players_list     = players.first(@venue.players_count).to_a
   @players_per_team = @venue.players_count / @venue.teams
   @teams            = Array.new(@venue.teams) { Array.new }
   @temp_list        = @players.sort_by(&:rating)
+  avrg              = players.sum(&:rating) / @venue.teams
 
-  while @temp_list.any?
-    0.upto(@venue.teams - 1) { |i| 
-      if @temp_list.any?
-        @teams[i] << @temp_list.first
-        @temp_list.slice!(0)
-      end
-    }
-
-    0.upto(@venue.teams - 1) { |i|
-      if @temp_list.any?
-        @teams[i] << @temp_list.last
-        @temp_list.pop()
-      end
-    }
-
+  0.upto(@venue.teams - 2) do |i|
+    temp_team = @players_list.combination(5).find_all{ |arr| arr.sum(&:rating) == avrg }.sample
+    @teams[i] = temp_team
+    @players_list = @players_list - temp_team
   end
-
+  @teams[@venue.teams - 1] = @players_list
   @teams
 end
 
