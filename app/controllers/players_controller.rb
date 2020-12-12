@@ -13,7 +13,7 @@ class PlayersController < ApplicationController
 		@old_rating == 0 ? @rating = params[:player][:rating] : @rating = (params[:player][:rating].to_i + @old_rating) / 2
 
 		if @player.update(rating: @rating)
-			redirect_to root_path
+			redirect_to '/player'
 			flash[:success] = "Rating saved" 
 		else
 			flash[:alert] = "Not saved!"
